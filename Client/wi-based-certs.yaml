@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+  name: test-webhook-service-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    test-webhook-service.io/system: "true"
+  name: test-webhook-service-admin
+  namespace: test-webhook-service-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  labels:
+    test-webhook-service.io/system: "true"
+  name: test-webhook-service-manager-role
+  namespace: test-webhook-service-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  labels:
+    test-webhook-service.io/system: "true"
+  name: test-webhook-service-manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    test-webhook-service.io/system: "true"
+  name: test-webhook-service-manager-rolebinding
+  namespace: test-webhook-service-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: test-webhook-service-manager-role
+subjects:
+- kind: ServiceAccount
+  name: test-webhook-service-admin
+  namespace: test-webhook-service-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    test-webhook-service.io/system: "true"
+  name: test-webhook-service-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: test-webhook-service-manager-role
+subjects:
+- kind: ServiceAccount
+  name: test-webhook-service-admin
+  namespace: test-webhook-service-system
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    test-webhook-service.io/system: "true"
+  name: test-webhook-service-server-cert
+  namespace: test-webhook-service-system

@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    test-webhook-service.io/system: "true"
+  name: test-webhook-service-service
+  namespace: test-webhook-service-system
+spec:
+  ports:
+  - port: 443
+    targetPort: 8443
+  selector:
+    test-webhook-service.io/system: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    test-webhook-service.io/system: "true"
+  name: test-webhook-service-controller-manager
+  namespace: test-webhook-service-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      test-webhook-service.io/system: "true"
+  template:
+    metadata:
+      labels:
+        test-webhook-service.io/system: "true"
+    spec:
+      containers:
+      - name: test-webhook
+        image: ishani2727/k8s-mutating-webhook:1.10
+        ports:
+        - containerPort: 8443
+        volumeMounts:
+        - mountPath: /certs
+          name: cert
+          readOnly: true
+      serviceAccountName: test-webhook-service-admin
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: test-webhook-service-server-cert
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  labels:
+    test-webhook-service.io/system: "true"
+  name: test-webhook-service-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: test-webhook-service-service
+      namespace: test-webhook-service-system
+      path: /test
+  failurePolicy: Ignore
+  matchPolicy: Equivalent
+  name: mutation.test-webhook-service.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+  sideEffects: None
