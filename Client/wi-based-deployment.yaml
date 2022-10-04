@@ -8,7 +8,7 @@ metadata:
 spec:
   ports:
   - port: 443
-    targetPort: 8443
+    targetPort: 9453
   selector:
     test-webhook-service.io/system: "true"
 ---
@@ -33,7 +33,7 @@ spec:
       - name: test-webhook
         image: ishani2727/k8s-mutating-webhook:1.10
         ports:
-        - containerPort: 8443
+        - containerPort: 9453
         volumeMounts:
         - mountPath: /certs
           name: cert
@@ -74,4 +74,5 @@ webhooks:
     - UPDATE
     resources:
     - pods
+    - persistentvolumeclaims
   sideEffects: None
